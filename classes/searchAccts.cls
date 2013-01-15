@@ -113,16 +113,17 @@ public class searchAccts {
         // Address Record Types
         addrRecTypesPlist = new List<SelectOption> () ;
         addrRecTypesPlist.add(new SelectOption('',GAS_NONE)) ;
-        for (RecordTypeLocalization rtl : [select ParentId, Parent.Name, Value from RecordTypeLocalization where ParentId in (select Id FROM RecordType where SobjectType = 'Address_vod__c') and Language = :lang order by Value]) {
+        for (RecordTypeLocalization rtl : [select ParentId, Parent.Name, Value from RecordTypeLocalization where ParentId in (select Id FROM RecordType where SobjectType = 'Address_vod__c' AND IsActive = true) and Language = :lang order by Value]) {
             addrRecTypesPlist.add(new SelectOption(rtl.ParentId,rtl.Value));
             recTypeXlation.put (rtl.Parent.Name, rtl.Value) ;
         }
         // Also need to pick up those Record Types not in RecordTypeLocalization
-        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Address_vod__c' and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
+        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Address_vod__c'  AND IsActive = true and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
             addrRecTypesPlist.add(new SelectOption(rt.Id,rt.Name));
             recTypeXlation.put (rt.Name, rt.Name) ;
         }
         addrRecTypesPlist = SortOptionList(addrRecTypesPlist) ;
+
 
 
         // Get values of custom settings
