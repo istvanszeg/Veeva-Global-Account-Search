@@ -135,7 +135,7 @@ function popup(windowname) {
     <apex:outputPanel >
     <br/>
     <apex:commandButton rendered="{!parentSearch!='1'}" action="{!cancel}" value="{!GAS_CANCEL}"/>
-    <apex:commandButton rendered="{!parentSearch=='1'}" onClick="parent.window.location.hash='RESDETAIL' ;parent.window.location.hash='TOPX' ;parent.popup('popUpDiv')" value="{!GAS_CANCEL}"/>
+    <apex:commandButton rendered="{!parentSearch=='1'}" onClick="parent.window.location.hash='RESDETAIL' ;parent.window.location.hash='TOPX' ;parent.popup('popUpDiv')" value="{!GAS_CANCEL}"/> 
     <br/>
     </apex:outputPanel>
     </center>
@@ -143,7 +143,7 @@ function popup(windowname) {
         <tr><td>
         <apex:pageBlock id="pb1" title="{!IF(parentSearch=='1',GAS_SFPA,GAS_SFA)}">
             <apex:pageBlockButtons location="top">
-                <apex:commandButton oncomplete="if (document.getElementById('p1:messagesOP').innerHTML == '') {window.location.hash='TOPX';window.location.hash='RESDETAIL'}" action="{!search}" value="{!GAS_SEARCH}" rerender="restableOP,messagesOP" id="theButton"/>
+                <apex:commandButton oncomplete="if (document.getElementById('p1:messagesOP').innerHTML == '') {window.location.hash='TOPX';window.location.hash='RESDETAIL'}" action="{!doSearch}" value="{!GAS_SEARCH}" rerender="restableOP,messagesOP" id="theButton"/>
             </apex:pageBlockButtons>
             <apex:pageBlockSection id="pbs11" collapsible="false" title="" columns="5">
 

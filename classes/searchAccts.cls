@@ -1,12 +1,18 @@
+/**
+ * Global Account search
+ *
+ * @version        1.0
+ * @author         Hamayoun Kahn
+ */
 public class searchAccts {
 
 
-    public List<resultHeader> resultHeaders {set;get;}
+    public List<ResultHeader> resultHeaders {set;get;}
 
     public String wc {get;set;}
 
-    public List <searchField> acctSearchFields {set;get;}
-    public List <searchField> addrSearchFields {set;get;}
+    public List <SearchField> acctSearchFields {set;get;}
+    public List <SearchField> addrSearchFields {set;get;}
 
     private List<String> acctSearchFieldSet  ;
     private List<String> addrSearchFieldSet  ;
@@ -31,8 +37,9 @@ public class searchAccts {
     public String returnElemId {set;get;}
 
     public Boolean showAllAddrs {set;get;}
+    public Boolean trackAlignmentHistory {get;set;}
 
-    public searchResult [] results {get;set;}
+    public SearchResult [] results {get;set;}
 
     public String sortKey {get;set;}
     public String sortDir {get;set;}
@@ -63,16 +70,21 @@ public class searchAccts {
 
     // Constructor
     public searchAccts () {
-        results = new List<searchResult> () ;
+        results = new List<SearchResult> () ;
         parentSearch = ApexPages.currentPage().getParameters().get('parentSearch');
         parentAcctField = ApexPages.currentPage().getParameters().get('parentAcctField');
         returnElemId = ApexPages.currentPage().getParameters().get('returnElemId');
         String lang = UserInfo.getLanguage() ;
         // Get labels from Message_vod__c for user's language
-        Message_vod__c [] labels = [select Name,Text_vod__c from Message_vod__c where Language_vod__c = :lang and Category_vod__c = 'Account' and Name in ('GAS_CANCEL','GAS_SEARCH','GAS_LOOKUP','GAS_SFA','GAS_EM','GAS_SW','GAS_CONTAINS','GAS_NONE','GAS_RESULTS','GAS_ATT','GAS_NOCRIT','GAS_NAMESEARCH','GAS_NOMATCH','GAS_TOOMANY','GAS_NOTALGN','GAS_MANYALGN','GAS_INTERR','GAS_SUCCESS', 'GAS_SELECT','GAS_SFPA','GAS_CLEAR') and Active_vod__c = true] ;
+        Message_vod__c [] labels = [SELECT Name,Text_vod__c 
+                                    FROM Message_vod__c 
+                                    WHERE Language_vod__c = :lang AND 
+                                          Category_vod__c = 'Account' AND 
+                                          Name LIKE 'GAS%' AND
+                                          Active_vod__c = true] ;
         Map <String,String> labelMap = new Map <String,String> () ;
         for (Message_vod__c label : labels) {
-            labelMap.put(label.Name, label.Text_vod__c) ;
+            labelMap.put(label.Name, String.escapeSingleQuotes(label.Text_vod__c)) ;
         }
         GAS_CANCEL = labelMap.get('GAS_CANCEL') ;
         GAS_SEARCH = labelMap.get('GAS_SEARCH') ;
@@ -100,12 +112,12 @@ public class searchAccts {
         // We need to use the translation table, and also filter by sObjectType
         acctRecTypesPlist = new List<SelectOption> () ;
         acctRecTypesPlist.add(new SelectOption('',GAS_NONE)) ;
-        for (RecordTypeLocalization rtl : [select ParentId, Parent.Name, Value from RecordTypeLocalization where ParentId in (select Id FROM RecordType where SobjectType = 'Account') and Language = :lang order by Value]) {
+        for (RecordTypeLocalization rtl : [select ParentId, Parent.Name, Value from RecordTypeLocalization where ParentId in (select Id FROM RecordType where SobjectType = 'Account' AND IsActive = true) and Language = :lang order by Value]) {
             acctRecTypesPlist.add(new SelectOption(rtl.ParentId,rtl.Value));
             recTypeXlation.put (rtl.Parent.Name, rtl.Value) ;
         }
         // Also need to pick up those Record Types not in RecordTypeLocalization
-        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Account' and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
+        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Account' AND IsActive = true and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
             acctRecTypesPlist.add(new SelectOption(rt.Id,rt.Name));
             recTypeXlation.put (rt.Name, rt.Name) ;
         }
@@ -118,37 +130,38 @@ public class searchAccts {
             recTypeXlation.put (rtl.Parent.Name, rtl.Value) ;
         }
         // Also need to pick up those Record Types not in RecordTypeLocalization
-        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Address_vod__c'  AND IsActive = true and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
+        for (RecordType rt :[select Id,Name from RecordType where SobjectType = 'Address_vod__c' AND IsActive = true and Id not in (select ParentId FROM RecordTypeLocalization where Language = :lang)]) {
             addrRecTypesPlist.add(new SelectOption(rt.Id,rt.Name));
             recTypeXlation.put (rt.Name, rt.Name) ;
         }
         addrRecTypesPlist = SortOptionList(addrRecTypesPlist) ;
 
 
-
         // Get values of custom settings
-        GASSettings__c gas = [select Account_Search_Field_Set__c,Address_Search_Field_Set__c,Result_Field_Set__c,Show_All_Addresses__c from GASSettings__c where name = 'Main'] ;
+        GASSettings__c gas = [select Account_Search_Field_Set__c,Address_Search_Field_Set__c,Result_Field_Set__c,Show_All_Addresses__c, Track_Alignment_History__c from GASSettings__c where name = 'Main'] ;
         acctSearchFieldSet = gas.Account_Search_Field_Set__c.split(',') ;
         addrSearchFieldSet = gas.Address_Search_Field_Set__c.split(',') ;
         resultFieldSet = gas.Result_Field_Set__c.split(',') ;
         showAllAddrs = gas.Show_All_Addresses__c ;
+        trackAlignmentHistory  = gas.Track_Alignment_History__c;
+        
         // Set up search fields
-        acctSearchFields = new List <searchField> () ;
+        acctSearchFields = new List <SearchField> () ;
         acctFieldMap = Schema.SObjectType.Account.fields.getMap();
         for (String f : acctSearchFieldSet) {
             Schema.DescribeFieldResult  dfr = acctFieldMap.get(f).getDescribe() ;
-            acctSearchFields.add (new searchField('Account',dfr)) ;
+            acctSearchFields.add (new SearchField('Account',dfr)) ;
         }
-        addrSearchFields = new List <searchField> () ;
+        addrSearchFields = new List <SearchField> () ;
         addrFieldMap = Schema.SObjectType.Address_vod__c.fields.getMap();
         for (String f : addrSearchFieldSet) {
             Schema.DescribeFieldResult  dfr = addrFieldMap.get(f).getDescribe() ;
-            addrSearchFields.add (new searchField('Address_vod__c',dfr)) ;
+            addrSearchFields.add (new SearchField('Address_vod__c',dfr)) ;
         }
         // Parse resultFieldSet to get result Account and Address fields
         acctResultFields = new Set<String> () ;
         addrResultFields = new Set<String> () ;
-        resultHeaders = new List<resultHeader> () ;
+        resultHeaders = new List<ResultHeader> () ;
         sortKey = '' ;
         sortDir = 'A' ;
         for (String rf : resultFieldSet) {
@@ -169,7 +182,7 @@ public class searchAccts {
                 }
                 resFieldLabelMap.put (rf, label) ;
                 addrResultFields.add (rf.replace('ADD.', '')) ;
-                resultHeader rh = new resultHeader () ;
+                ResultHeader rh = new ResultHeader () ;
                 rh.label = label ;
                 rh.apiname = rf ;
                 resultHeaders.add (rh) ;
@@ -187,7 +200,7 @@ public class searchAccts {
                 }
                 resFieldLabelMap.put (rf, label) ;
                 acctResultFields.add (rf) ;
-                resultHeader rh = new resultHeader () ;
+                ResultHeader rh = new ResultHeader () ;
                 rh.label = label ;
                 rh.apiname = rf ;
                 resultHeaders.add (rh) ;
@@ -223,17 +236,17 @@ public class searchAccts {
         return null ;
     }
 
-    public PageReference search() {
+    public PageReference doSearch() {
         
         try {
-            results = new List<searchResult> () ;
+            results = new List<SearchResult> () ;
             Set <Id> gotAccts = new Set<Id> ();
             List <String> acctIds = new List <String> () ;
             String whereClause = '' ;
             Boolean searchAddrFirst = false ;
             String prefix = '' ;
             // Determine if user has enetered any values for address search fields
-            for (searchField sf : addrSearchFields) {
+            for (SearchField sf : addrSearchFields) {
                 if (sf.value != '' && sf.value != 'null' && sf.value != null) {
                 searchAddrFirst = true  ;
                 prefix = 'Account_vod__r.' ;
@@ -246,19 +259,21 @@ public class searchAccts {
             Boolean got_name = false; // Got full name
 
             // Combine the search fields
-            List <searchField> allSearchFields = new List <searchField> () ;
+            List <SearchField> allSearchFields = new List <SearchField> () ;
             allSearchFields.addAll(acctSearchFields) ;
             allSearchFields.addAll(addrSearchFields) ;
 
             // Go thru each search field
-            for (searchField sf : allSearchFields) {
+            for (SearchField sf : allSearchFields) {
                 if (sf.value != '' && sf.value != 'null' && sf.value != null) {
                     String field = sf.apiname ;
                     String op = '=' ;
                     String value = sf.value ;
                     // Escape any quotes in the value
-                    value = value.replace('\'', '\\\'') ;
-
+                    //JK - changing to use escapeSingleQuotes method
+                    //value = value.replace('\'', '\\\'') ;
+                    value = String.escapeSingleQuotes(value);
+                    
                     if (sf.obj == 'Account') {
                         field = prefix + field ;
                     }
@@ -315,7 +330,7 @@ public class searchAccts {
                 }
             }
             else {
-                String resFields = join(acctResultFields,',') ;
+                String resFields = joinStrings(acctResultFields,',') ;
                 // Add Formatted_Name_vod__c if it's not there
                 if (!resFields.contains('Formatted_Name_vod__c')) {
                     resFields += ',Formatted_Name_vod__c' ;
@@ -357,28 +372,28 @@ System.debug ('parentSearch is ' + parentSearch) ;
             }
 
             // We now do a Parent to Child query to get the Accounts we want, along with their addresses.  Order addresses by Primary Address
-            String resFields = join(acctResultFields,',') ;
+            String resFields = joinStrings(acctResultFields,',') ;
             // Add Formatted_Name_vod__c if it's not there
             if (!resFields.contains('Formatted_Name_vod__c')) {
                 resFields += ',Formatted_Name_vod__c' ;
             }
-            String q = 'select ' + resFields + ', (select ' + join(addrResultFields,',') + ' from Address_vod__r order by Primary_vod__c desc, CreatedDate) from Account where Id in :acctIds' ;
+            String q = 'select ' + resFields + ', (select ' + joinStrings(addrResultFields,',') + ' from Address_vod__r order by Primary_vod__c desc, CreatedDate) from Account where Id in :acctIds' ;
 
 
             for (Account a : Database.query(q)) {
-                searchResult mainSR ;
+                SearchResult mainSR ;
                 Integer ix = 0 ;
                 if (a.Address_vod__r.size() > 0) {
                     for (Address_vod__c ad : a.Address_vod__r) {
                         // Build the searchResults
-                        searchResult sr = new searchResult () ;
+                        SearchResult sr = new SearchResult () ;
                         sr.acctId = a.Id ;
                         sr.addrId = a.Address_vod__r[ix].Id ;
                         sr.isSelected = false ;
                         // Now get field values 
-                        sr.srFields = new List<searchResultField> () ;
+                        sr.srFields = new List<SearchResultField> () ;
                         for (String rf : resultFieldSet) {
-                            searchResultField srf = new searchResultField () ;
+                            SearchResultField srf = new SearchResultField () ;
                             srf.apiname = rf ;
                             String typex  = resFieldTypeMap.get(rf) ;
                             if (rf.startsWith('ADD.')) {
@@ -427,14 +442,14 @@ System.debug ('parentSearch is ' + parentSearch) ;
                 }
                 else {
                     // No address, just get and set Account info
-                    searchResult sr = new searchResult () ;
+                    SearchResult sr = new SearchResult () ;
                     sr.acctId = a.Id ;
                     sr.addrId = '' ;
                     sr.isSelected = false ;
                     // Now get field values 
-                    sr.srFields = new List<searchResultField> () ;
+                    sr.srFields = new List<SearchResultField> () ;
                     for (String rf : resultFieldSet) {
-                        searchResultField srf = new searchResultField () ;
+                        SearchResultField srf = new SearchResultField () ;
                         srf.apiname = rf ;
                         String typex  = resFieldTypeMap.get(rf) ;
                         if (rf.startsWith('ADD.')) {
@@ -486,7 +501,7 @@ System.debug ('parentSearch is ' + parentSearch) ;
             return null ;
         }
         // Find the selected Account
-        for (searchResult sr : results) {
+        for (SearchResult sr : results) {
             if (sr.isSelected == true) {
                 newAcctId = sr.acctId ;
                 break ;
@@ -510,7 +525,7 @@ System.debug ('parentSearch is ' + parentSearch) ;
         String userTerrName = [select Name from Territory where Id = :utList[0].TerritoryId].Name ;
         String terrString = userTerrName ;
         // Now check for existing territories for the Account
-        List <AccountShare> asList = [select AccountId,UserOrGroupId from AccountShare where AccountId =  :newAcctId and RowCause in ('Territory','TerritoryManual')] ;
+        List <AccountShare> asList = [select AccountId,UserOrGroupId from AccountShare where AccountId =  :newAcctId and RowCause in ('TerritoryManual')] ;
         if (asList.size() > 0) {
             // Get all the UserOrGroupIds, and store in a List
             List<Id> idlist1 = new List<Id> () ;
@@ -534,16 +549,43 @@ System.debug ('parentSearch is ' + parentSearch) ;
                 terrString = terrString + ';' + t.Name ;
             }
         }
+        
+        GAS_Alignment_History_vts__c history = new GAS_Alignment_History_vts__c();
+        
         try{
+            //track that Account to be aligned
+            history.Account__c = newAcctId;
+            history.New_Territory__c = terrString;
+            
             // Now let's see if the Account Territory Loader already exists
-            List <Account_Territory_Loader_vod__c> atlList = [select Id from Account_Territory_Loader_vod__c where Account_vod__c = :newAcctId] ;
+            List <Account_Territory_Loader_vod__c> atlList = [select Id, Territory_vod__c from Account_Territory_Loader_vod__c where Account_vod__c = :newAcctId] ;
             if (atlList.size() == 1) {
                 Account_Territory_Loader_vod__c atl = atlList[0] ;
+                
+                //track ATL and old territory string
+                history.Account_Territory_Loader__c = atl.Id;
+                history.Old_Territory__c = atl.Territory_vod__c;
+                
+                //set new ATL territory
                 atl.Territory_vod__c = terrString ;
+
                 update (atl) ;
+                
+                //insert history record
+                if (trackAlignmentHistory) {
+                    insert history;
+                }
+                
             }
             else {
-                insert (new Account_Territory_Loader_vod__c(Account_vod__c=newAcctId,External_ID_vod__c=newAcctId,Territory_vod__c=terrString)) ;
+                Account_Territory_Loader_vod__c atl = new Account_Territory_Loader_vod__c(Account_vod__c=newAcctId,External_ID_vod__c=newAcctId,Territory_vod__c=terrString);
+                insert (atl) ;
+                
+                //track history
+                history.Account_Territory_Loader__c = atl.Id;
+                if (trackAlignmentHistory) {
+                    insert history;
+                }
             }
             ApexPages.addmessage(new ApexPages.message(ApexPages.severity.INFO,GAS_SUCCESS));
         }
@@ -559,7 +601,7 @@ System.debug ('parentSearch is ' + parentSearch) ;
 
 
 
-    private static String join (Set<String> ss, String delim) {
+    private static String joinStrings (Set<String> ss, String delim) {
         String retVal = '' ;
         for (String s : ss) {
             if (retVal != '')  {
@@ -688,12 +730,12 @@ System.debug ('r3:' + retval) ;
         return returnList; 
     }  
 
-    private List<searchResult> SortSearchResults (List<searchResult> ListToSort, String keyField, String sortDir) {
+    private List<SearchResult> SortSearchResults (List<SearchResult> ListToSort, String keyField, String sortDir) {
 
         if (keyField != '') {
-            // Set key field for each searchResult
-            for(searchResult x : ListToSort) {
-                for (searchResultField y : x.srFields) {
+            // Set key field for each SearchResult
+            for(SearchResult x : ListToSort) {
+                for (SearchResultField y : x.srFields) {
                     // Find the keyField
                     if (y.apiname == keyField) {
                         x.key = y.rawvalue ;
@@ -707,16 +749,16 @@ System.debug ('r3:' + retval) ;
         if(ListToSort == null || ListToSort.size() <= 1)
             return ListToSort;
             
-        List<searchResult> Less = new List<searchResult>();
-        List<searchResult> Greater = new List<searchResult>();
+        List<SearchResult> Less = new List<SearchResult>();
+        List<SearchResult> Greater = new List<SearchResult>();
         integer pivot = ListToSort.size() / 2;
           
         // save the pivot and remove it from the list
-        searchResult pivotValue = ListToSort[pivot];
+        SearchResult pivotValue = ListToSort[pivot];
         ListToSort.remove(pivot);
         
         if (sortDir == 'A') { // Ascending
-            for(searchResult x : ListToSort)
+            for(SearchResult x : ListToSort)
             {
                 if(x.key <= pivotValue.key)
                     Less.add(x);
@@ -724,33 +766,33 @@ System.debug ('r3:' + retval) ;
             }
         }
         else { // Descending 
-            for(searchResult x : ListToSort)
+            for(SearchResult x : ListToSort)
             {
                 if(x.key <= pivotValue.key)
                     Greater.add(x);
                 else if(x.key > pivotValue.key) Less.add(x);   
             }
         }
-        List<searchResult> returnList = new List<searchResult> ();
+        List<SearchResult> returnList = new List<SearchResult> ();
         returnList.addAll(SortSearchResults(Less, '', sortDir));
         returnList.add(pivotValue);
         returnList.addAll(SortSearchResults(Greater, '', sortDir));
         return returnList; 
     }  
 
-    public class searchResult {
+    public class SearchResult {
 
         public String acctId {get;set;}
         public String acctName {get;set;}
         public String addrId {get;set;}
         public Boolean isSelected {get;set;}
         public String key {set;get;}
-        public List<searchResultField> srFields {get;set;}
-        public List<searchResult> otherAddrs {get;set;}
+        public List<SearchResultField> srFields {get;set;}
+        public List<SearchResult> otherAddrs {get;set;}
 
     }
 
-    public class searchResultField {
+    public class SearchResultField {
 
         public String apiname {get;set;}
         public String label {get;set;}
@@ -761,7 +803,7 @@ System.debug ('r3:' + retval) ;
 
     }
 
-    public class searchField {
+    public class SearchField {
 
         public String obj {get;set;}
         public String label {get;set;}
@@ -781,7 +823,7 @@ System.debug ('r3:' + retval) ;
         public Boolean no_picklist {get;set;}
         public List<SelectOption> plist {set;get;}
 
-        public searchField (String o, Schema.DescribeFieldResult dfr) {
+        public SearchField (String o, Schema.DescribeFieldResult dfr) {
             obj = o ;
             label = dfr.getLabel() ;
             apiname = dfr.getName () ;
@@ -853,7 +895,7 @@ System.debug ('is_acctlookup is ' + is_acctlookup) ;
 
     } 
 
-    public class resultHeader {
+    public class ResultHeader {
 
         public String label {set;get;} 
         public String apiname {set;get;} 
