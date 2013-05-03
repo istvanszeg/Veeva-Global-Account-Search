@@ -1,8 +1,8 @@
 /**
  * Global Account search
  *
- * @version        1.0
- * @author         Hamayoun Kahn
+ * @version        2.0
+ * @author         Veeva Technical Services (Jeff Kelso, Murugesh Naidu, Wayne Abbott)
  */
 public class searchAccts {
 
@@ -525,28 +525,39 @@ System.debug ('parentSearch is ' + parentSearch) ;
         String userTerrName = [select Name from Territory where Id = :utList[0].TerritoryId].Name ;
         String terrString = userTerrName ;
         // Now check for existing territories for the Account
-        List <AccountShare> asList = [select AccountId,UserOrGroupId from AccountShare where AccountId =  :newAcctId and RowCause in ('TerritoryManual')] ;
+        List <AccountShare> asList = [select AccountId,UserOrGroupId, RowCause from AccountShare where AccountId =  :newAcctId //and RowCause in ('TerritoryManual') - mnaidu;04/28/13 - check for any kinds of alignment
+        ] ;
         if (asList.size() > 0) {
             // Get all the UserOrGroupIds, and store in a List
             List<Id> idlist1 = new List<Id> () ;
+            Set<Id> manuallyAssignedGrpIDs = new Set<ID>();//mnaidu - 4/28/13 - capture what's manually assigned
+            Set<Id> manuallyAssignedTerrIDs = new Set<ID>();//mnaidu - 4/28/13 - capture what's manually assigned
             for (AccountShare ash : asList) {
                 idlist1.add(ash.UserOrGroupId) ;
+                if(ash.RowCause=='TerritoryManual'){
+	                manuallyAssignedGrpIDs.add(ash.UserOrGroupId);   //mnaidu - 4/28/13 - capture what's manually assigned             	
+                }
             }
             // Now let's get the IDs of the Territories
             List<Id> idlist2 = new List<Id> () ;
             List<Group> groupList = [select RelatedId from group where Id in :idlist1] ;
             for (Group g : groupList) {
                 idlist2.add(g.RelatedId) ;
+                if(manuallyAssignedGrpIDs.contains(g.Id)){
+                	manuallyAssignedTerrIDs.add(g.RelatedId); //mnaidu - 4/28/13 - capture what's manually assigned
+                }
             }
             // Finally, get the names
-            List <Territory> terrList = [select Name from Territory where Id in :idlist2] ;
+            List <Territory> terrList = [select Id, Name from Territory where Id in :idlist2] ;
             for (Territory t : terrList) {
                 // If the Territory is already there, output a warning and exit
                 if (t.Name == userTerrName) {
                                     ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING,GAS_INTERR));
                         return null ;
                 }
-                terrString = terrString + ';' + t.Name ;
+                if(manuallyAssignedTerrIDs.contains(t.Id)){ //mnaidu - 4/28/13 - only add to the terrString if this is Manually already assigned
+               		terrString = terrString + ';' + t.Name ;                	
+                }
             }
         }
         
@@ -568,8 +579,13 @@ System.debug ('parentSearch is ' + parentSearch) ;
                 
                 //set new ATL territory
                 atl.Territory_vod__c = terrString ;
+                
+                System.debug('Before updating the ATL reco: ' +  atl.Territory_vod__c);
 
                 update (atl) ;
+ 
+                 System.debug('After updating the ATL reco: ' +  atl.Territory_vod__c);
+ 
                 
                 //insert history record
                 if (trackAlignmentHistory) {
