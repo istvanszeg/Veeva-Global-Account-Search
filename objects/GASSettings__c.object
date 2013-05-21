@@ -40,5 +40,13 @@ Name,ADD.Name,ADD.City_vod__c,ADD.State_vod__c,ADD.Zip_vod__c,Specialty_1_vod__c
         <label>Show_All_Addresses</label>
         <type>Checkbox</type>
     </fields>
+    <fields>
+        <fullName>Track_Alignment_History__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>If checked, Account alignment changes will be recorded in the custom object GAS_Alignment_History_vts__c</description>
+        <externalId>false</externalId>
+        <label>Track Alignment History</label>
+        <type>Checkbox</type>
+    </fields>
     <label>GASSettings</label>
 </CustomObject>
