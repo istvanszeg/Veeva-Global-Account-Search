@@ -10,6 +10,7 @@
     </types>
     <types>
         <members>GASSettings__c</members>
+        <members>GAS_Alignment_History_vts__c</members>
         <name>CustomObject</name>
     </types>
     <version>20.0</version>
