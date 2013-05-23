@@ -13,5 +13,5 @@
         <members>GAS_Alignment_History_vts__c</members>
         <name>CustomObject</name>
     </types>
-    <version>20.0</version>
+    <version>27.0</version>
 </Package>
