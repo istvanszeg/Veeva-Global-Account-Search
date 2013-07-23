@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>CustomVeevaUtilities</members>
+        <members>GASUtilities</members>
+        <members>UserEntityAffiliationsVO</members>
         <members>searchAccts</members>
         <name>ApexClass</name>
     </types>
@@ -9,9 +12,21 @@
         <name>ApexPage</name>
     </types>
     <types>
+        <members>GASVisibilityConfigurationBefore</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
         <members>GASSettings__c</members>
         <members>GAS_Alignment_History_vts__c</members>
+        <members>GAS_Hierarchical_Setting__c</members>
+        <members>GAS_Visibility_Configuration__c</members>
         <name>CustomObject</name>
+    </types>
+    <types>
+        <members>GAS_2_x_Docs</members>
+        <members>GAS_2_x_Docs/GAS_Hierarchical_Custom_Setting_Org_Level_Instance.csv</members>
+        <members>GAS_2_x_Docs/GAS_Installation_Notes.pdf</members>
+        <name>Document</name>
     </types>
     <version>27.0</version>
 </Package>

@@ -1,8 +1,10 @@
 /**
  * Global Account search
  *
- * @version        2.0
+ * @version        2.0 
+ * @version Update: 2.1 (7/31/13)
  * @author         Veeva Technical Services (Jeff Kelso, Murugesh Naidu, Wayne Abbott)
+ * Update: mnaidu - 7/16/13 - Added Custom Filtering mechanism and migrated code to GAS Hierarchical Custom settings
  */
 public class searchAccts {
 
@@ -66,6 +68,7 @@ public class searchAccts {
     public String GAS_SUCCESS {set;get;}
     public String GAS_SELECT {set;get;}
     public String GAS_CLEAR {set;get;}
+    public User theUser;
 
 
     // Constructor
@@ -76,7 +79,8 @@ public class searchAccts {
         returnElemId = ApexPages.currentPage().getParameters().get('returnElemId');
         String lang = UserInfo.getLanguage() ;
         // Get labels from Message_vod__c for user's language
-        Message_vod__c [] labels = [SELECT Name,Text_vod__c 
+        //mnaidu - 7/18/2013 - This will be moved to a Hierarchical Custom setting in GAS 2.1
+       /* Message_vod__c [] labels = [SELECT Name,Text_vod__c 
                                     FROM Message_vod__c 
                                     WHERE Language_vod__c = :lang AND 
                                           Category_vod__c = 'Account' AND 
@@ -86,7 +90,37 @@ public class searchAccts {
         for (Message_vod__c label : labels) {
             labelMap.put(label.Name, String.escapeSingleQuotes(label.Text_vod__c)) ;
         }
-        GAS_CANCEL = labelMap.get('GAS_CANCEL') ;
+        */
+
+        // Get values of custom settings
+        //mnaidu - 7/16/2013 - We should leverage Hierarchy Custom settings for this as it is more suited to this type of transaction. Also should
+        //give us the ability to have different search and results columns for different users
+        //GASSettings__c gas = [select Account_Search_Field_Set__c,Address_Search_Field_Set__c,Result_Field_Set__c,Show_All_Addresses__c, Track_Alignment_History__c from GASSettings__c where name = 'Main'] ;
+		GAS_Hierarchical_Setting__c   gas = GAS_Hierarchical_Setting__c.getInstance();//this returns the appropriate settings for the user based on his user profile  
+        GAS_CANCEL = gas.GAS_Message_Cancel__c ;
+        GAS_SEARCH = gas.GAS_Message_Search__c;
+        GAS_LOOKUP = gas.GAS_Message_Lookup__c ;
+        GAS_SFA = gas.GAS_Message_SFA__c ;
+        GAS_SFPA = gas.GAS_Message_SFPA__c ;
+        GAS_EM = gas.GAS_Message_EM__c ;
+        GAS_SW = gas.GAS_Message_STARTS_WITH__c ;
+        GAS_CONTAINS = gas.GAS_Message_CONTAINS__c ;
+        GAS_NONE = gas.GAS_Message_NONE__c ;
+        GAS_RESULTS = gas.GAS_Message_RESULTS__c ;
+        GAS_ATT = gas.GAS_Message_ATT__c ;
+        GAS_NOCRIT = gas.GAS_Message_NoCriteria__c;
+        GAS_NAMESEARCH = gas.GAS_Message_NameSearch__c ;
+        GAS_NOMATCH = gas.GAS_Message_NOMATCH__c ;
+        GAS_TOOMANY = gas.GAS_Message_TOO_MANY__c ;
+        GAS_NOTALGN = gas.GAS_Message_NOTALIGNED__c ;
+        GAS_MANYALGN = gas.GAS_Message_MANYALIGN__c;
+        GAS_INTERR = gas.GAS_Message_INTERR__c ;
+        GAS_SUCCESS = gas.GAS_Message_SUCCESS__c ;
+        GAS_SELECT = gas.GAS_Message_SELECT__c ;
+        GAS_CLEAR = gas.GAS_Message_CLEAR__c ;
+
+        
+     /*   GAS_CANCEL = labelMap.get('GAS_CANCEL') ;
         GAS_SEARCH = labelMap.get('GAS_SEARCH') ;
         GAS_LOOKUP = labelMap.get('GAS_LOOKUP') ;
         GAS_SFA = labelMap.get('GAS_SFA') ;
@@ -107,6 +141,7 @@ public class searchAccts {
         GAS_SUCCESS = labelMap.get('GAS_SUCCESS') ;
         GAS_SELECT = labelMap.get('GAS_SELECT') ;
         GAS_CLEAR = labelMap.get('GAS_CLEAR') ;
+        */
 
         // Get Record Types for Accounts and Addresses
         // We need to use the translation table, and also filter by sObjectType
@@ -137,8 +172,6 @@ public class searchAccts {
         addrRecTypesPlist = SortOptionList(addrRecTypesPlist) ;
 
 
-        // Get values of custom settings
-        GASSettings__c gas = [select Account_Search_Field_Set__c,Address_Search_Field_Set__c,Result_Field_Set__c,Show_All_Addresses__c, Track_Alignment_History__c from GASSettings__c where name = 'Main'] ;
         acctSearchFieldSet = gas.Account_Search_Field_Set__c.split(',') ;
         addrSearchFieldSet = gas.Address_Search_Field_Set__c.split(',') ;
         resultFieldSet = gas.Result_Field_Set__c.split(',') ;
@@ -215,6 +248,7 @@ public class searchAccts {
         addrResultFields.add('Id') ;
         addrResultFields.add('Account_vod__c') ;
         addrResultFields.add('Primary_vod__c') ;
+               
     }
 
     public PageReference sortResults() {
@@ -241,7 +275,7 @@ public class searchAccts {
         try {
             results = new List<SearchResult> () ;
             Set <Id> gotAccts = new Set<Id> ();
-            List <String> acctIds = new List <String> () ;
+            List <ID> acctIds = new List <String> () ;
             String whereClause = '' ;
             Boolean searchAddrFirst = false ;
             String prefix = '' ;
@@ -352,7 +386,7 @@ wc = 'at 1' ;
                 ApexPages.addMessage (new ApexPages.Message(ApexPages.Severity.WARNING, GAS_TOOMANY));
                 return null;
             }
-            Set <String> distinctAcctIds = new Set<String>() ;
+            Set <ID> distinctAcctIds = new Set<ID>() ;
 System.debug ('parentSearch is ' + parentSearch) ;
             if (parentSearch == '1') {
                 String query = 'select ' + parentAcctField + ', Count(Id) from Account where Primary_Parent_vod__c  in :acctIds group by ' + parentAcctField + '' ;
@@ -377,6 +411,13 @@ System.debug ('parentSearch is ' + parentSearch) ;
             if (!resFields.contains('Formatted_Name_vod__c')) {
                 resFields += ',Formatted_Name_vod__c' ;
             }
+            
+            //mnaidu 7/16/2013 - GAS 2.1 enhancement
+            //remove the account ids that need to be excluded
+            if(GAS_Hierarchical_Setting__c.getInstance().Do_Criteria_Based_Filtering__c){
+	            acctIds = excludeAccountsIfAny(acctIds);
+            }
+            
             String q = 'select ' + resFields + ', (select ' + joinStrings(addrResultFields,',') + ' from Address_vod__r order by Primary_vod__c desc, CreatedDate) from Account where Id in :acctIds' ;
 
 
@@ -745,6 +786,31 @@ System.debug ('r3:' + retval) ;
         }
         return returnList; 
     }  
+    
+            //mnaidu 7/16/2013 - GAS 2.1 enhancement
+            //remove the account ids that need to be excluded
+/**
+***** @author = Murugesh Naidu
+***** @date = July 17, 2013
+***** @param - List of Account Ids to process
+***** @return - List of Account Ids after exclusion criteria applied
+***** GAS 2.1 enhancements
+**/
+    private List<ID> excludeAccountsIfAny(List<ID> accountIds){
+        
+        if(accountIds==null || accountIds.size() == 0){
+        	return accountIds;
+        }
+        Set<ID> originalAcctIds = new Set<ID> ();
+        Set<ID> idsToExclude = GASUtilities.getAccountIdsToExclude(UserInfo.getUserId());
+        if(idsToExclude!=null && idsToExclude.size() > 0){
+        	originalAcctIds.addAll(accountIds);
+        	originalAcctIds.removeAll(idsToExclude);
+        	accountIds.clear();
+        	accountIds.addAll(originalAcctIds);
+        }
+        return accountIds;
+    }
 
     private List<SearchResult> SortSearchResults (List<SearchResult> ListToSort, String keyField, String sortDir) {
 
