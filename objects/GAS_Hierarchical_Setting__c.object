@@ -25,6 +25,14 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
         <type>TextArea</type>
     </fields>
     <fields>
+        <fullName>Align_Multiple_Territory__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>If checked, align an Account to multiple territories if the user is in more than one territory</description>
+        <externalId>false</externalId>
+        <label>Align Multiple Territory</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
         <fullName>Do_Criteria_Based_Filtering__c</fullName>
         <defaultValue>true</defaultValue>
         <description>If unchecked, criteria based filtering is completely turned off</description>
