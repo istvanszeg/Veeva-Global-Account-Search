@@ -5,6 +5,7 @@
  * @version Update: 2.1 (7/31/13)
  * @author         Veeva Technical Services (Jeff Kelso, Murugesh Naidu, Wayne Abbott)
  * Update: mnaidu - 7/16/13 - Added Custom Filtering mechanism and migrated code to GAS Hierarchical Custom settings
+ * Update: jkelso - 8/9/13 - Added ability to align accounts to multiple territories
  */
 public class searchAccts {
 
@@ -68,6 +69,7 @@ public class searchAccts {
     public String GAS_SUCCESS {set;get;}
     public String GAS_SELECT {set;get;}
     public String GAS_CLEAR {set;get;}
+    public Boolean GAS_ALIGN_MULTIPLE {get;set;}
     public User theUser;
 
 
@@ -96,7 +98,7 @@ public class searchAccts {
         //mnaidu - 7/16/2013 - We should leverage Hierarchy Custom settings for this as it is more suited to this type of transaction. Also should
         //give us the ability to have different search and results columns for different users
         //GASSettings__c gas = [select Account_Search_Field_Set__c,Address_Search_Field_Set__c,Result_Field_Set__c,Show_All_Addresses__c, Track_Alignment_History__c from GASSettings__c where name = 'Main'] ;
-		GAS_Hierarchical_Setting__c   gas = GAS_Hierarchical_Setting__c.getInstance();//this returns the appropriate settings for the user based on his user profile  
+        GAS_Hierarchical_Setting__c   gas = GAS_Hierarchical_Setting__c.getInstance();//this returns the appropriate settings for the user based on his user profile  
         GAS_CANCEL = gas.GAS_Message_Cancel__c ;
         GAS_SEARCH = gas.GAS_Message_Search__c;
         GAS_LOOKUP = gas.GAS_Message_Lookup__c ;
@@ -118,6 +120,7 @@ public class searchAccts {
         GAS_SUCCESS = gas.GAS_Message_SUCCESS__c ;
         GAS_SELECT = gas.GAS_Message_SELECT__c ;
         GAS_CLEAR = gas.GAS_Message_CLEAR__c ;
+        GAS_ALIGN_MULTIPLE = gas.Align_Multiple_Territory__c;
 
         
      /*   GAS_CANCEL = labelMap.get('GAS_CANCEL') ;
@@ -415,7 +418,7 @@ System.debug ('parentSearch is ' + parentSearch) ;
             //mnaidu 7/16/2013 - GAS 2.1 enhancement
             //remove the account ids that need to be excluded
             if(GAS_Hierarchical_Setting__c.getInstance().Do_Criteria_Based_Filtering__c){
-	            acctIds = excludeAccountsIfAny(acctIds);
+                acctIds = excludeAccountsIfAny(acctIds);
             }
             
             String q = 'select ' + resFields + ', (select ' + joinStrings(addrResultFields,',') + ' from Address_vod__r order by Primary_vod__c desc, CreatedDate) from Account where Id in :acctIds' ;
@@ -553,18 +556,35 @@ System.debug ('parentSearch is ' + parentSearch) ;
         }
 
         // Get the territory for the user
-        List<UserTerritory> utList = [select TerritoryId from userterritory where UserId = :UserInfo.getUserId()] ;
+        //jkelso - 8/12/13 - build list of multiple territories and territory Ids
+        List<UserTerritory> utList = new List<UserTerritory>();
+        List<Id> utIds = new List<Id>();
+        for (UserTerritory ut :[select TerritoryId from userterritory where UserId = :UserInfo.getUserId()]) {
+            system.debug(LoggingLevel.Info,'ut: ' + ut);
+            utList.add(ut);
+            utIds.add(ut.TerritoryId);
+        }
+        system.debug('utList: ' + utList);
         if (utList.size() == 0) {
             ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,GAS_NOTALGN));
             return null ;
         }
-        else if (utList.size() > 1) {
+        //jkelso - 8/12/13 - new custom setting to allow align of multiple territory
+        else if (utList.size() > 1 && !GAS_ALIGN_MULTIPLE) {
             ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,GAS_MANYALGN));
             return null ;
         }
         // Get the name of the Territory
-        String userTerrName = [select Name from Territory where Id = :utList[0].TerritoryId].Name ;
-        String terrString = userTerrName ;
+        List<String> userTerrNames = new List<String>();
+        String terrString = '';
+        //jkelso - 8/12/13 - build string of multiple territories
+        system.debug('utIds: ' + utIds);
+        for (Territory t : [SELECT Name FROM Territory WHERE ID IN :utIds]) {
+            userTerrNames.add(t.Name);
+            terrString += t.Name + ';';
+        }
+        terrString  = terrString.Substring(0,terrString.length()-1);
+        system.debug('terrString after building territories');
         // Now check for existing territories for the Account
         List <AccountShare> asList = [select AccountId,UserOrGroupId, RowCause from AccountShare where AccountId =  :newAcctId //and RowCause in ('TerritoryManual') - mnaidu;04/28/13 - check for any kinds of alignment
         ] ;
@@ -576,7 +596,7 @@ System.debug ('parentSearch is ' + parentSearch) ;
             for (AccountShare ash : asList) {
                 idlist1.add(ash.UserOrGroupId) ;
                 if(ash.RowCause=='TerritoryManual'){
-	                manuallyAssignedGrpIDs.add(ash.UserOrGroupId);   //mnaidu - 4/28/13 - capture what's manually assigned             	
+                    manuallyAssignedGrpIDs.add(ash.UserOrGroupId);   //mnaidu - 4/28/13 - capture what's manually assigned              
                 }
             }
             // Now let's get the IDs of the Territories
@@ -585,19 +605,21 @@ System.debug ('parentSearch is ' + parentSearch) ;
             for (Group g : groupList) {
                 idlist2.add(g.RelatedId) ;
                 if(manuallyAssignedGrpIDs.contains(g.Id)){
-                	manuallyAssignedTerrIDs.add(g.RelatedId); //mnaidu - 4/28/13 - capture what's manually assigned
+                    manuallyAssignedTerrIDs.add(g.RelatedId); //mnaidu - 4/28/13 - capture what's manually assigned
                 }
             }
             // Finally, get the names
             List <Territory> terrList = [select Id, Name from Territory where Id in :idlist2] ;
             for (Territory t : terrList) {
                 // If the Territory is already there, output a warning and exit
-                if (t.Name == userTerrName) {
-                                    ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING,GAS_INTERR));
+                for (String utn : userTerrNames) {
+                    if (t.Name == utn) {
+                        ApexPages.addmessage(new ApexPages.message(ApexPages.severity.WARNING,GAS_INTERR));
                         return null ;
+                    }
                 }
                 if(manuallyAssignedTerrIDs.contains(t.Id)){ //mnaidu - 4/28/13 - only add to the terrString if this is Manually already assigned
-               		terrString = terrString + ';' + t.Name ;                	
+                    terrString = terrString + ';' + t.Name ;                    
                 }
             }
         }
@@ -799,15 +821,15 @@ System.debug ('r3:' + retval) ;
     private List<ID> excludeAccountsIfAny(List<ID> accountIds){
         
         if(accountIds==null || accountIds.size() == 0){
-        	return accountIds;
+            return accountIds;
         }
         Set<ID> originalAcctIds = new Set<ID> ();
         Set<ID> idsToExclude = GASUtilities.getAccountIdsToExclude(UserInfo.getUserId());
         if(idsToExclude!=null && idsToExclude.size() > 0){
-        	originalAcctIds.addAll(accountIds);
-        	originalAcctIds.removeAll(idsToExclude);
-        	accountIds.clear();
-        	accountIds.addAll(originalAcctIds);
+            originalAcctIds.addAll(accountIds);
+            originalAcctIds.removeAll(idsToExclude);
+            accountIds.clear();
+            accountIds.addAll(originalAcctIds);
         }
         return accountIds;
     }
