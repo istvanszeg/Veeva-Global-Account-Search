@@ -23,10 +23,20 @@
         <name>CustomObject</name>
     </types>
     <types>
+        <members>GAS_Visibility_Configuration__c</members>
+        <name>CustomTab</name>
+    </types>
+    <types>
         <members>GAS_2_x_Docs</members>
+        <members>GAS_2_x_Docs/GAS_2_1_Enhancements.pptx</members>
         <members>GAS_2_x_Docs/GAS_Hierarchical_Custom_Setting_Org_Level_Instance.csv</members>
         <members>GAS_2_x_Docs/GAS_Installation_Notes.pdf</members>
+        <members>GAS_2_x_Docs/GAS_Technical_Specifications.pdf</members>
         <name>Document</name>
+    </types>
+    <types>
+        <members>GAS_Visibility_Configuration__c-GAS Visibility Configuration Layout</members>
+        <name>Layout</name>
     </types>
     <version>27.0</version>
 </Package>
