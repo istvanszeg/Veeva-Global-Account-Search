@@ -42,6 +42,15 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
         <type>Checkbox</type>
     </fields>
     <fields>
+        <fullName>Enable_Summary_View__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>If checked, users will be able to view a pre-defined summary of the Account prior to adding it to their teritories</description>
+        <externalId>false</externalId>
+        <inlineHelpText>If checked, users will be able to view a pre-defined summary of the Account prior to adding it to their teritories</inlineHelpText>
+        <label>Enable Summary View</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
         <fullName>GAS_Message_ATT__c</fullName>
         <defaultValue>&apos;Add To Territory&apos;</defaultValue>
         <externalId>false</externalId>
@@ -225,11 +234,35 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
     </fields>
     <fields>
         <fullName>GAS_Message_TOO_MANY__c</fullName>
-        <defaultValue>&apos;More than 20 records found.  Please narrow your search criteria&apos;</defaultValue>
+        <defaultValue>&apos;More than allowed number of records found. Please narrow your search criteria&apos;</defaultValue>
         <externalId>false</externalId>
         <label>GAS Message - TOO MANY</label>
         <required>false</required>
         <type>TextArea</type>
+    </fields>
+    <fields>
+        <fullName>GAS_Msg_Acct_StrtsWith_Contains_Label__c</fullName>
+        <defaultValue>&apos;Starts With&apos;</defaultValue>
+        <description>This is the label - If value (GAS_Msg_Acct_StrtsWith_Contains_Value__c) is &quot;Starts with&quot;, this will typically also be Starts with. If the value is &quot;Contains&quot;, this will also typically be Contains.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>This is the label - If value (GAS_Msg_Acct_StrtsWith_Contains_Value__c) is &quot;Starts with&quot;, this will typically also be Starts with. If the value is &quot;Contains&quot;, this will also typically be Contains.</inlineHelpText>
+        <label>GAS Msg Acct StrtsWith Contains Label</label>
+        <length>20</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>GAS_Msg_Acct_StrtsWith_Contains_Value__c</fullName>
+        <defaultValue>&apos;Starts With&apos;</defaultValue>
+        <description>This value must be either &apos;Starts With&apos; or &apos;Contains&apos;. If Starts With, then GAS performs a Starts With search on Account Name, First Name &amp; Last Name search parameters. Else a Contains search</description>
+        <externalId>false</externalId>
+        <inlineHelpText>This value must be either &apos;Starts With&apos; or &apos;Contains&apos;. If Starts With, then GAS performs a Starts With search on Account Name, First Name &amp; Last Name search parameters. Else a Contains search</inlineHelpText>
+        <label>GAS Message - Accnt SWorContains Value</label>
+        <length>20</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
     </fields>
     <fields>
         <fullName>Include_Public_Group_based_filtering__c</fullName>
@@ -239,6 +272,19 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
         <inlineHelpText>If checked, then Public Group Entity type filtering is enabled. Should only be turned ON if Public Groups based filtering is being used.</inlineHelpText>
         <label>Include Public Group based filtering</label>
         <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>MAX_Allowed_Distinct_Accounts__c</fullName>
+        <defaultValue>20</defaultValue>
+        <description>Max allowed distinct accounts. Be careful with this as it may impact performance. Typically 20 is the default but you may bump this upto 50 to 100</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Max allowed distinct accounts. Be careful with this as it may impact performance. Typically 20 is the default but you may bump this upto 50 to 100</inlineHelpText>
+        <label>MAX Allowed Distinct Accounts</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <type>Number</type>
+        <unique>false</unique>
     </fields>
     <fields>
         <fullName>Result_Field_Set__c</fullName>
@@ -257,6 +303,82 @@ Name,ADD.Name,ADD.City_vod__c,ADD.State_vod__c,ADD.Zip_vod__c,Specialty_1_vod__c
         <externalId>false</externalId>
         <label>Show_All_Addresses</label>
         <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Default_Acct_Field_Set_Name__c</fullName>
+        <defaultValue>&apos;VPROF_Default_Account_Summary&apos;</defaultValue>
+        <description>Name of the Account field set to be used to display Account fields summary by default. If one exists for the specific Recordtype (follows @@RectypeName@@FieldSetName naming convention for the FieldSet name), then that field set will be used</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Name of the Account field set to be used to display Account fields summary by default. If one exists for the specific Recordtype (follows @@RectypeName@@FieldSetName naming convention for the FieldSet name), then that field set will be used</inlineHelpText>
+        <label>Summary View Default Acct Field Set Name</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Delimiter_String__c</fullName>
+        <defaultValue>&apos;@@&apos;</defaultValue>
+        <description>2 character delimiter string used to designate start and stop of the Record Type Developer Name in Field Set name</description>
+        <externalId>false</externalId>
+        <inlineHelpText>2 character delimiter string used to designate start and stop of the Record Type Developer Name in Field Set name</inlineHelpText>
+        <label>Summary View Delimiter String</label>
+        <length>2</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Hyperlink_Field_Name__c</fullName>
+        <defaultValue>&apos;Name&apos;</defaultValue>
+        <description>API Field Name of a field on Account object that needs to be hyperlinked in the GAS Results to show the Account Summary</description>
+        <externalId>false</externalId>
+        <inlineHelpText>API Field Name of a field on Account object that needs to be hyperlinked in the GAS Results to show the Account Summary</inlineHelpText>
+        <label>Summary View Hyperlink Field Name</label>
+        <length>100</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Page_Title__c</fullName>
+        <defaultValue>&apos;Account Summary&apos;</defaultValue>
+        <description>Account Summary Page title</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Account Summary Page title</inlineHelpText>
+        <label>Summary View Page Title</label>
+        <length>100</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Section_Background_Color__c</fullName>
+        <defaultValue>&apos;#880000&apos;</defaultValue>
+        <description>Background color as specified by HTML CSS Standards. For eg: .#880000
+
+Reference URL: http://www.w3schools.com/cssref/css_colors.asp for details</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Background color as specified by HTML CSS Standards. For eg: .#880000
+
+Reference URL: http://www.w3schools.com/cssref/css_colors.asp for details</inlineHelpText>
+        <label>Summary View Section Background Color</label>
+        <length>10</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Summary_View_Section_Title__c</fullName>
+        <defaultValue>&apos;Account Information&apos;</defaultValue>
+        <description>Summary View Section Title</description>
+        <externalId>false</externalId>
+        <inlineHelpText>Summary View Section Title</inlineHelpText>
+        <label>Summary View Section Title</label>
+        <length>100</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
     </fields>
     <fields>
         <fullName>Track_Alignment_History__c</fullName>

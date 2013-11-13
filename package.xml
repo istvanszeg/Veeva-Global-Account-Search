@@ -4,10 +4,12 @@
         <members>CustomVeevaUtilities</members>
         <members>GASUtilities</members>
         <members>UserEntityAffiliationsVO</members>
+        <members>VPROF_GASAccountDetailsControllerExt</members>
         <members>searchAccts</members>
         <name>ApexClass</name>
     </types>
     <types>
+        <members>VPROF_GASAccountDetails</members>
         <members>searchAccts</members>
         <name>ApexPage</name>
     </types>

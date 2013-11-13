@@ -358,6 +358,7 @@ VOD_USERS_IN_MY_TERRITORY - Generates a clause listing User IDs for all Salesfor
     	System.debug('myTerrs = ' + myTerrs);
     	return myTerrs;
     }
+    
     public static String getRecordTypeIdByName(String objectName, String recordTypeName){
 		Schema.SObjectType objType = Schema.getGlobalDescribe().get(objectName);
 		if(objType.getDescribe().getRecordTypeInfosByName().get(recordTypeName)!=null){
@@ -369,4 +370,56 @@ VOD_USERS_IN_MY_TERRITORY - Generates a clause listing User IDs for all Salesfor
 			return '\'' + '\'';
 		}
     }
+    
+    public static List<Schema.FieldSetMember> readFieldSet(String fieldSetName, String ObjectName)
+	{
+	    Map<String, Schema.SObjectType> GlobalDescribeMap = Schema.getGlobalDescribe();
+	    Schema.SObjectType SObjectTypeObj = GlobalDescribeMap.get(ObjectName);
+	    Schema.DescribeSObjectResult DescribeSObjectResultObj = SObjectTypeObj.getDescribe();
+	
+	    Schema.FieldSet fieldSetObj = DescribeSObjectResultObj.FieldSets.getMap().get(fieldSetName);
+	    return fieldSetObj.getFields();
+	}
+    
+    /*
+    * Returns default fieldset if no fielset exists for the RecordTypeName
+    */
+    public static List<Schema.FieldSetMember> readFieldSet(String defaultFieldSetName, 
+    														String RTDeveloperName, 
+    														String ObjectName,
+    														String delim)
+	{
+	    List<Schema.FieldSetMember> FSMembers;
+	    Map<String, Schema.SObjectType> GlobalDescribeMap = Schema.getGlobalDescribe();
+	    Schema.SObjectType SObjectTypeObj = GlobalDescribeMap.get(ObjectName);
+	    Schema.DescribeSObjectResult DescribeSObjectResultObj = SObjectTypeObj.getDescribe();
+	
+		Map<String, Schema.FieldSet> fieldSetMap = DescribeSObjectResultObj.FieldSets.getMap();
+		String theFieldSetName;
+		System.debug('fieldSetMap = ' + fieldSetMap);
+		for(Schema.FieldSet aFS: fieldSetMap.values()){
+			System.debug('Label = ' + aFS.getLabel());
+			System.debug('Name = ' + aFS.getName());
+			if(aFS.getLabel().contains(delim + RTDeveloperName + delim)){
+				theFieldSetName = aFS.getName();
+				break;
+			}
+		}
+		System.debug('theFieldSetName = ' + theFieldSetName);
+		Schema.FieldSet fieldSetObj;
+		if(theFieldSetName!=null){
+			fieldSetObj = fieldSetMap.get(theFieldSetName);
+		}
+	    else{
+	    	fieldSetObj = fieldSetMap.get(defaultFieldSetName);
+	    }
+	   System.debug('fieldSetObj = ' + fieldSetObj);
+	    
+	    if(fieldSetObj!=null){
+	    	FSMembers = fieldSetObj.getFields();
+	    }
+	    System.debug('FSMembers = ' + FSMembers);
+	    return FSMembers;
+	}
+    
 }

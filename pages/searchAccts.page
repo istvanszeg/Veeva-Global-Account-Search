@@ -1,3 +1,14 @@
+<!-- 
+
+* @version Update 2.2 (9/19/2013) 
+ * Upate: mnaidu - 9/19/2013 - Added condition to identify at run time which is the field element to be hyperlinked in the results. Coded so as to make this
+ * purely a VF page change so that it can be easy to integrate if not a pure GAS 2.2 implementation is used
+ *
+ * Update - v2.2 - mnaidu - Added settings to flip between Contains and Starts With for Account Name fields. Custom setting value of 'Contains'  in GAS_Msg_Acct_StrtsWith_Contains_Value__c
+ * ensures a Contains search while 'Starts With' causes a Starts With search. You can also provide a label to call "Starts With" or "Contains" labels something else. The value however
+ * should not be anything other that Starts With/Contains
+ 
+ -->
 <apex:page id="p1" controller="searchAccts" showHeader="{!parentSearch!='1'}" sidebar="{!parentSearch!='1'}">
 
 <style type="text/css">
@@ -153,7 +164,8 @@ function popup(windowname) {
 
                     <apex:selectRadio style="text-align:left" rendered="{!sfld.has_es}" value="{!sfld.opt_value}">
                         <apex:selectOption rendered="{!sfld.has_es}"  itemValue="Exact Match" itemLabel="{!GAS_EM}"/>
-                        <apex:selectOption rendered="{!sfld.has_es}"  itemValue="Starts With" itemLabel="{!GAS_SW}"/>
+                        <apex:selectOption rendered="{!sfld.has_es}"  itemValue="{!$Setup.GAS_Hierarchical_Setting__c.GAS_Msg_Acct_StrtsWith_Contains_Value__c}" 
+                        												itemLabel="{!$Setup.GAS_Hierarchical_Setting__c.GAS_Msg_Acct_StrtsWith_Contains_Label__c}"/>
                     </apex:selectRadio>
                     <apex:selectRadio style="text-align:left" rendered="{!sfld.has_cs}" value="{!sfld.opt_value}">
                         <apex:selectOption rendered="{!sfld.has_cs}"  itemValue="Starts With" itemLabel="{!GAS_SW}"/>
@@ -234,7 +246,10 @@ function popup(windowname) {
                         </td>
                     <apex:repeat value="{!item.srFields}" var="rfld">
                         <td>
-                        <apex:outputText value="{!rfld.value}"/> 
+                        
+                        	<apex:outputLink rendered="{!AND($Setup.GAS_Hierarchical_Setting__c.Enable_Summary_View__c, rfld.label == $Setup.GAS_Hierarchical_Setting__c.Summary_View_Hyperlink_Field_Name__c)}" 
+                        						value="/apex/VPROF_GASAccountDetails?id={!item.acctId}" target="_blank">{!rfld.value}</apex:outputLink>
+                        	<apex:outputText rendered="{!NOT(AND($Setup.GAS_Hierarchical_Setting__c.Enable_Summary_View__c, rfld.label == $Setup.GAS_Hierarchical_Setting__c.Summary_View_Hyperlink_Field_Name__c))}" value="{!rfld.value}"/>
                         </td>
                     </apex:repeat>
                 </tr>

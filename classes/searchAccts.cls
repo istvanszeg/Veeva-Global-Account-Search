@@ -6,6 +6,10 @@
  * @author         Veeva Technical Services (Jeff Kelso, Murugesh Naidu, Wayne Abbott)
  * Update: mnaidu - 7/16/13 - Added Custom Filtering mechanism and migrated code to GAS Hierarchical Custom settings
  * Update: jkelso - 8/9/13 - Added ability to align accounts to multiple territories
+ * @version Update 2.2 (9/19/2013) 
+ * Upate: mnaidu - 9/19/2013 - This change applies ONLY to the Visualforce page "searchAccts.page". Added condition to identify at run time which is the field 
+ * element to be hyperlinked in the results. Conditional check Coded in VF page so as to make this purely a VF page change so that it can be easy to integrate 
+ * if not a pure GAS 2.2 implementation is used
  */
 public class searchAccts {
 
@@ -402,12 +406,13 @@ System.debug ('parentSearch is ' + parentSearch) ;
             else {
                 distinctAcctIds.addAll(acctIds) ;
             }
-            // Maximum of 20 distinct Accounts
+ /*           // Maximum of 20 distinct Accounts
+ //mnaidu - commenting this section to allow users to use max size using a custom setting attribute
             if (distinctAcctIds.size() > 20) {
                 ApexPages.addMessage (new ApexPages.Message(ApexPages.Severity.WARNING, GAS_TOOMANY));
                 return null;
             }
-
+*/
             // We now do a Parent to Child query to get the Accounts we want, along with their addresses.  Order addresses by Primary Address
             String resFields = joinStrings(acctResultFields,',') ;
             // Add Formatted_Name_vod__c if it's not there
@@ -420,7 +425,14 @@ System.debug ('parentSearch is ' + parentSearch) ;
             if(GAS_Hierarchical_Setting__c.getInstance().Do_Criteria_Based_Filtering__c){
                 acctIds = excludeAccountsIfAny(acctIds);
             }
-            
+
+   			//mnaidu - GAS 2.2 - Allows users to regulate max display size based on custom setting
+            if (acctIds!=null && acctIds.size() > (Integer) GAS_Hierarchical_Setting__c.getInstance().MAX_Allowed_Distinct_Accounts__c) {
+            	String warnMessage = GAS_TOOMANY + ' ( Found '+ acctIds.size() + ', Allowed ' + (Integer) GAS_Hierarchical_Setting__c.getInstance().MAX_Allowed_Distinct_Accounts__c +' )';
+                ApexPages.addMessage (new ApexPages.Message(ApexPages.Severity.WARNING, warnMessage));
+                return null;
+            }
+
             String q = 'select ' + resFields + ', (select ' + joinStrings(addrResultFields,',') + ' from Address_vod__r order by Primary_vod__c desc, CreatedDate) from Account where Id in :acctIds' ;
 
 
@@ -904,7 +916,6 @@ System.debug ('r3:' + retval) ;
         public String rawvalue {get;set;}
         public Boolean is_Acct {get;set;}
         public Boolean is_Addr {get;set;}
-
     }
 
     public class SearchField {
