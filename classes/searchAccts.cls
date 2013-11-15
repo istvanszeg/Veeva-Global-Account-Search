@@ -315,6 +315,8 @@ public class searchAccts {
                     //value = value.replace('\'', '\\\'') ;
                     value = String.escapeSingleQuotes(value);
                     
+                    value = value.trim();
+                    
                     if (sf.obj == 'Account') {
                         field = prefix + field ;
                     }
