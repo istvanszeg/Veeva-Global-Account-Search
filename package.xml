@@ -18,7 +18,6 @@
         <name>ApexTrigger</name>
     </types>
     <types>
-        <members>GASSettings__c</members>
         <members>GAS_Alignment_History_vts__c</members>
         <members>GAS_Hierarchical_Setting__c</members>
         <members>GAS_Visibility_Configuration__c</members>
