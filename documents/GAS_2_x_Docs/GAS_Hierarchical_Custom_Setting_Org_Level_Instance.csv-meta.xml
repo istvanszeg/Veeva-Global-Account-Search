@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Document xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Contains a single record which if inserted using Default Mapping will create an Org Level instance for the Hierarchy Custom Setting - GAS_Hierarchical_Setting__c. With GAS 2.1, this setting replaces the GAS Veeva Messages as well as the List based Setting</description>
-    <internalUseOnly>false</internalUseOnly>
-    <keywords>GAS_Hierarchical_Setting__c</keywords>
-    <name>GAS Hierarchical Custom Setting (Org Level) Instance</name>
-    <public>false</public>
-</Document>
