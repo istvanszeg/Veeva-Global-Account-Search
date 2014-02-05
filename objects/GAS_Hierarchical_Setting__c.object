@@ -2,7 +2,6 @@
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
     <customSettingsType>Hierarchy</customSettingsType>
     <customSettingsVisibility>Public</customSettingsVisibility>
-    <enableEnhancedLookup>false</enableEnhancedLookup>
     <enableFeeds>false</enableFeeds>
     <fields>
         <fullName>Account_Search_Field_Set__c</fullName>
@@ -39,6 +38,15 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
         <externalId>false</externalId>
         <inlineHelpText>If unchecked, criteria based filtering is completely turned off</inlineHelpText>
         <label>Do Criteria Based Filtering</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Enable_CB_Filter_Retain_Mode__c</fullName>
+        <defaultValue>false</defaultValue>
+        <description>If checked, criteria based filter results are included instead of being excluded</description>
+        <externalId>false</externalId>
+        <inlineHelpText>If checked, criteria based filter results are included instead of being excluded</inlineHelpText>
+        <label>Enable CB Filter Retain Mode</label>
         <type>Checkbox</type>
     </fields>
     <fields>

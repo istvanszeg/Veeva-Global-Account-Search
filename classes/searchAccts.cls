@@ -1,6 +1,7 @@
 /**
  * Global Account search
  *
+ * @version 2.3 - mnaidu - update Jan 14, 2014 (see notes below)
  * @version        2.0 
  * @version Update: 2.1 (7/31/13)
  * @author         Veeva Technical Services (Jeff Kelso, Murugesh Naidu, Wayne Abbott)
@@ -10,6 +11,10 @@
  * Upate: mnaidu - 9/19/2013 - This change applies ONLY to the Visualforce page "searchAccts.page". Added condition to identify at run time which is the field 
  * element to be hyperlinked in the results. Conditional check Coded in VF page so as to make this purely a VF page change so that it can be easy to integrate 
  * if not a pure GAS 2.2 implementation is used
+ * Update: mnaidu v2.3 - 1/9/14 - Performance improvement change: Updated the class (method excludeAccountsIfAny) to send the unfiltered accountIds to avoid full table scans when
+ * deciding accounts to be excluded/included
+ * Update: mnaidu v2.3 - 1/9/14 -  New feature to allow inclusive filters -  Updated the class (method excludeAccountsIfAny) to recognize Inclusive filters based on Custom setting value
+ 
  */
 public class searchAccts {
 
@@ -314,8 +319,6 @@ public class searchAccts {
                     //JK - changing to use escapeSingleQuotes method
                     //value = value.replace('\'', '\\\'') ;
                     value = String.escapeSingleQuotes(value);
-                    
-                    value = value.trim();
                     
                     if (sf.obj == 'Account') {
                         field = prefix + field ;
@@ -838,10 +841,21 @@ System.debug ('r3:' + retval) ;
             return accountIds;
         }
         Set<ID> originalAcctIds = new Set<ID> ();
-        Set<ID> idsToExclude = GASUtilities.getAccountIdsToExclude(UserInfo.getUserId());
-        if(idsToExclude!=null && idsToExclude.size() > 0){
+        //mnaidu - 1/9/2014 - additionally pass the "accountIds" to avoid full table scans
+        Set<ID> idsToIncludeExclude = GASUtilities.getAccountIdsToExclude(UserInfo.getUserId(), accountIds); 
+        //mnaidu - 1/9/2014 - check to see if the filters are supposed to be retain the filter results
+        // or exclude the filter results from the general unfiltered search
+        Boolean retain = (GAS_Hierarchical_Setting__c.getInstance().Enable_CB_Filter_Retain_Mode__c == null) 
+        							? false : GAS_Hierarchical_Setting__c.getInstance().Enable_CB_Filter_Retain_Mode__c ;
+        if(idsToIncludeExclude!=null && idsToIncludeExclude.size() > 0){
             originalAcctIds.addAll(accountIds);
-            originalAcctIds.removeAll(idsToExclude);
+            if(retain){
+            	originalAcctIds.retainAll(idsToIncludeExclude);
+            }
+            else{
+            	originalAcctIds.removeAll(idsToIncludeExclude);
+            }
+            
             accountIds.clear();
             accountIds.addAll(originalAcctIds);
         }

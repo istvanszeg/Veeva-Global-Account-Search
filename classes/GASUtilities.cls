@@ -4,6 +4,7 @@
 ***** @author: Murugesh Naidu, Veeva Professional Services
 ***** @description: Includes methods used by the GAS search API (searchAccts.cls). At the time of creation, this mostly
 ***** had methods related to GAS Custom Criteria based filtering
+**** Jan 9, 2014 - mnaidu - Update the filtering methods to consider the already filtered account list so that a full table scan is avoided
 **/
 public without sharing class GASUtilities {
 
@@ -12,8 +13,11 @@ public without sharing class GASUtilities {
 																+ ' where Id = \'' + UserInfo.getUserId() + '\'' ); 
 	public static final Set<String> FIELD_TYPES_NEEDING_QUOTES = new Set<String> {'STRING', 'REFERENCE','ID','BASE64','PICKLIST','MULTIPICKLIST','URL',
 																					'PHONE','EMAIL'};
-	public static final String KEYWORD_DELIM = '@@';																			
-	public static Set<ID> getAccountIdsToExclude(ID userId){
+	public static final String KEYWORD_DELIM = '@@';
+	
+    //MNAIDU - Jan 9, 2014 - Update the signature to take in the accountIds that have already been filtered by the first unfiltered search so that we avoid a full
+	//table scan																			
+	public static Set<ID> getAccountIdsToExclude(ID userId, List<ID> acctIdsWithoutFilter){
 		
 		Set<ID> accountIdsToExclude = null;
     //	LOGGED_IN_USER_GLOBAL = (User) Database.query(CustomVeevaUtilities.getDynamicSOQLForAllEligibleFields(User.SOBjectType) + ' where Id = \'' + UserInfo.getUserId() + '\'' );
@@ -23,22 +27,39 @@ public without sharing class GASUtilities {
 		if(userGVCs!=null && userGVCs.size() > 0){
 			accountIdsToExclude = new Set<ID> ();
 			for(GAS_Visibility_Configuration__c aGVC: userGVCs){
-				accountIdsToExclude.addAll(getMatchingAccountIds(aGVC.Custom_Criteria__c, aGVC.Object_API_Name__c, aGVC.Account_Lookup_Field_API_Name__c));
+				accountIdsToExclude.addAll(getMatchingAccountIds(aGVC.Custom_Criteria__c, aGVC.Object_API_Name__c, aGVC.Account_Lookup_Field_API_Name__c, acctIdsWithoutFilter));
 			}
 		}		
 		return accountIdsToExclude;
 	}
 	
-	public static List<ID> getMatchingAccountIds(String whereClause, String tableName, String accountLookupFieldName){
+	//MNAIDU - Jan 9, 2014 - Update the signature to take in the accountIds that have already been filtered by the first unfiltered search so that we avoid a full
+	//table scan																			
+	public static List<ID> getMatchingAccountIds(String whereClause, String tableName, String accountLookupFieldName, List<ID> acctIdsWithoutFilter){
 		
 		String dynamicSOQL = '';
+		String additionalFilter = '';
 		whereClause = getParsedQuery(whereClause, tableName);
 		System.debug('Parsed whereClause = ' + whereClause);
 		if(accountLookupFieldName!=null && accountLookupFieldName.trim()!=''){
-			dynamicSOQL = 'Select Id, ' + accountLookupFieldName + ', Name from ' +  tableName + ' where ' + whereClause;
+			if(acctIdsWithoutFilter!=null){
+				additionalFilter = ' AND ' + accountLookupFieldName + ' in:acctIdsWithoutFilter';
+			}
+			else{
+				additionalFilter = ' LIMIT 1';//this is just a SOQL compile check - called from the trigger				
+			}
+			dynamicSOQL = 'Select Id, ' + accountLookupFieldName + ', Name from ' +  tableName 
+							+ ' where ' + whereClause + additionalFilter;
 		}
 		else{
-			dynamicSOQL = 'Select Id, Name from ' +  tableName + ' where ' + whereClause;			
+			if(acctIdsWithoutFilter!=null){
+				additionalFilter = ' AND Id in:acctIdsWithoutFilter';
+			}
+			else{
+				additionalFilter = ' LIMIT 1';//this is just a SOQL compile check - called from the trigger				
+			}
+			dynamicSOQL = 'Select Id, Name from ' +  tableName 
+							+ ' where ' + whereClause + additionalFilter;		
 		}
 		System.debug('dynamicSOQL = ' + dynamicSOQL);
 		List<sObject> sObjList = Database.query(dynamicSOQL);
@@ -336,6 +357,7 @@ VOD_USERS_IN_MY_TERRITORY - Generates a clause listing User IDs for all Salesfor
     			break;//break if no more parseable string exists
     		}
     	}
+    	//MNAIDU - Jan 9, 2014 - Enclose the string in ( ) so that an AND condition could be applied
      	return queryToParse;
     }
     
