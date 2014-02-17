@@ -14,6 +14,7 @@
  * Update: mnaidu v2.3 - 1/9/14 - Performance improvement change: Updated the class (method excludeAccountsIfAny) to send the unfiltered accountIds to avoid full table scans when
  * deciding accounts to be excluded/included
  * Update: mnaidu v2.3 - 1/9/14 -  New feature to allow inclusive filters -  Updated the class (method excludeAccountsIfAny) to recognize Inclusive filters based on Custom setting value
+ * Update: mnaidu v2.3 - 2/17/14 - Updated excludeAccountsIfAny() method to handle situation where none of the accounts should be included if the criteria does not match the inclusive criteria
  
  */
 public class searchAccts {
@@ -430,6 +431,11 @@ System.debug ('parentSearch is ' + parentSearch) ;
             if(GAS_Hierarchical_Setting__c.getInstance().Do_Criteria_Based_Filtering__c){
                 acctIds = excludeAccountsIfAny(acctIds);
             }
+           // Error if nothing found
+            if (acctIds.size() == 0) {
+                ApexPages.addMessage (new ApexPages.Message(ApexPages.Severity.WARNING, GAS_NOMATCH));
+                return null;
+            }
 
    			//mnaidu - GAS 2.2 - Allows users to regulate max display size based on custom setting
             if (acctIds!=null && acctIds.size() > (Integer) GAS_Hierarchical_Setting__c.getInstance().MAX_Allowed_Distinct_Accounts__c) {
@@ -834,6 +840,7 @@ System.debug ('r3:' + retval) ;
 ***** @param - List of Account Ids to process
 ***** @return - List of Account Ids after exclusion criteria applied
 ***** GAS 2.1 enhancements
+***** Feb 17, 2014 - Added fix to return empty set (zero accounts) if mode is Retain and no accounts are to be included
 **/
     private List<ID> excludeAccountsIfAny(List<ID> accountIds){
         
@@ -847,6 +854,11 @@ System.debug ('r3:' + retval) ;
         // or exclude the filter results from the general unfiltered search
         Boolean retain = (GAS_Hierarchical_Setting__c.getInstance().Enable_CB_Filter_Retain_Mode__c == null) 
         							? false : GAS_Hierarchical_Setting__c.getInstance().Enable_CB_Filter_Retain_Mode__c ;
+        if(retain && (idsToIncludeExclude == null || idsToIncludeExclude.size() == 0)){
+        	//no accounts should be shown
+        	accountIds.clear();
+        	return accountIds;
+        }
         if(idsToIncludeExclude!=null && idsToIncludeExclude.size() > 0){
             originalAcctIds.addAll(accountIds);
             if(retain){
