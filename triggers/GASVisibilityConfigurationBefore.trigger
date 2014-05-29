@@ -29,6 +29,11 @@ trigger GASVisibilityConfigurationBefore on GAS_Visibility_Configuration__c (bef
 				aGVC.addError(aGVC.Object_API_Name__c + ' value for Object_API_Name__c on GVC with Entity Name ' + aGVC.Name + ' is Invalid');		
 		}
 		//check to ensure the Dynamic SOQL will work ok
-		GASUtilities.getMatchingAccountIds(aGVC.Custom_Criteria__c, aGVC.Object_API_Name__c, aGVC.Account_Lookup_Field_API_Name__c, null);
-	}
+     try{
+            GASUtilities.getMatchingAccountIds(aGVC.Custom_Criteria__c, aGVC.Object_API_Name__c, aGVC.Account_Lookup_Field_API_Name__c, null);
+        }catch(System.QueryException e){
+            System.debug('Query Exception..ignore because this is just a compile check and having the exception means query compiled successfully');
+            System.debug(e.getMessage());
+        }
+ 	}
 }
