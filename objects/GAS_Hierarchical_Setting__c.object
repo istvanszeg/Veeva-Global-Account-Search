@@ -5,7 +5,7 @@
     <enableFeeds>false</enableFeeds>
     <fields>
         <fullName>Account_Search_Field_Set__c</fullName>
-        <defaultValue>&apos;Name,FirstName,LastName,Specialty_1_vod__c,RecordTypeId,CreatedById,Primary_Parent_vod__c&apos;</defaultValue>
+        <defaultValue>&apos;Name,FirstName,LastName,Specialty_1_vod__c,RecordTypeId,Primary_Parent_vod__c&apos;</defaultValue>
         <description>List of fields, delimited by string, to use as search fields for the Account.  Sample value:
 Name,FirstName,LastName,Specialty_1_vod__c.</description>
         <externalId>false</externalId>
