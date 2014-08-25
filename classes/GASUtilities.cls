@@ -1,6 +1,7 @@
 /**
 ***** @className: GASUtilities.cls
 ***** @createDate: 7/17/2013
+***** updated 8/25/2014 - for error no viable alternative at character '‘'
 ***** @author: Murugesh Naidu, Veeva Professional Services
 ***** @description: Includes methods used by the GAS search API (searchAccts.cls). At the time of creation, this mostly
 ***** had methods related to GAS Custom Criteria based filtering
@@ -307,7 +308,7 @@ VOD_USERS_IN_MY_TERRITORY - Generates a clause listing User IDs for all Salesfor
     public static String getParsedQuery(String queryToParse, String objectName){
     	
     	if(queryToParse==null || queryToParse.trim() == '' || !queryToParse.contains(KEYWORD_DELIM)){
-    		return queryToParse;
+    		return  '( ' + queryToParse + ' )';
     	}
       	Map<String, String> tokenToValueMap = new Map<String, String> ();
     	Set<String> tokenSet = CustomVeevaUtilities.getFieldTokens(queryToParse, KEYWORD_DELIM, KEYWORD_DELIM, true);
@@ -358,7 +359,7 @@ VOD_USERS_IN_MY_TERRITORY - Generates a clause listing User IDs for all Salesfor
     		}
     	}
     	//MNAIDU - Jan 9, 2014 - Enclose the string in ( ) so that an AND condition could be applied
-     	return queryToParse;
+     	return '( ' + queryToParse + ' )';
     }
     
     public static String getUsersInMyTerritoryAndBelow(String queryWithField){
