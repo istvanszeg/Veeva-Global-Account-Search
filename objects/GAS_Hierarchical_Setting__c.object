@@ -5,7 +5,7 @@
     <enableFeeds>false</enableFeeds>
     <fields>
         <fullName>Account_Search_Field_Set__c</fullName>
-        <defaultValue>&apos;Name,FirstName,LastName,Specialty_1_vod__c,RecordTypeId,Primary_Parent_vod__c&apos;</defaultValue>
+        <defaultValue>&apos;Name,FirstName,LastName,Specialty_1_vod__c,Primary_Parent_vod__c&apos;</defaultValue>
         <description>List of fields, delimited by string, to use as search fields for the Account.  Sample value:
 Name,FirstName,LastName,Specialty_1_vod__c.</description>
         <externalId>false</externalId>
@@ -15,7 +15,7 @@ Name,FirstName,LastName,Specialty_1_vod__c.</description>
     </fields>
     <fields>
         <fullName>Address_Search_Field_Set__c</fullName>
-        <defaultValue>&apos;Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c,RecordTypeId&apos;</defaultValue>
+        <defaultValue>&apos;Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c&apos;</defaultValue>
         <description>List of fields, delimited by commas, of Address fields to search on. Sample value:
 Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
         <externalId>false</externalId>
@@ -296,7 +296,7 @@ Name,City_vod__c,State_vod__c,Zip_vod__c,Phone_vod__c</description>
     </fields>
     <fields>
         <fullName>Result_Field_Set__c</fullName>
-        <defaultValue>&apos;Name,Specialty_1_vod__c,RecordTypeId,CreatedDate,CreatedById,ADD.Name,ADD.City_vod__c,ADD.State_vod__c,ADD.Zip_vod__c,ADD.Primary_vod__c&apos;</defaultValue>
+        <defaultValue>&apos;Name,Specialty_1_vod__c,CreatedDate,ADD.Name,ADD.City_vod__c,ADD.State_vod__c,ADD.Zip_vod__c,ADD.Primary_vod__c&apos;</defaultValue>
         <description>List of fields, delimited by comma, to display in search results.  If any of these are Address fields, they must be prefixed by &apos;ADD.&apos;.  Sample value:
 Name,ADD.Name,ADD.City_vod__c,ADD.State_vod__c,ADD.Zip_vod__c,Specialty_1_vod__c,ADD.Primary_vod__c</description>
         <externalId>false</externalId>
