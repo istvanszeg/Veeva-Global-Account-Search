@@ -1,6 +1,7 @@
 /**
  * Global Account search
  *
+ * @version 2.3 - jkelso - update Sept 30, 2014 (see notes below)
  * @version 2.3 - mnaidu - update Jan 14, 2014 (see notes below)
  * @version        2.0 
  * @version Update: 2.1 (7/31/13)
@@ -15,6 +16,7 @@
  * deciding accounts to be excluded/included
  * Update: mnaidu v2.3 - 1/9/14 -  New feature to allow inclusive filters -  Updated the class (method excludeAccountsIfAny) to recognize Inclusive filters based on Custom setting value
  * Update: mnaidu v2.3 - 2/17/14 - Updated excludeAccountsIfAny() method to handle situation where none of the accounts should be included if the criteria does not match the inclusive criteria
+ * Update: jkelso v2.3 - 9/30/14 - Added patch for SFDC Winter 15 defect that has not been applied to all instances yet. More info here: https://success.salesforce.com/issues_view?id=a1p30000000T5buAAC
  
  */
 public class searchAccts {
@@ -746,11 +748,16 @@ System.debug ('r3:' + retval) ;
         if (typex == 'Reference') {
             // Get relationship name
             String relship ;
+            String fnameLcase;
             if (fname.startsWith('ADD.')) {
-                relship = addrFieldMap.get(fname.replace('ADD.', '')).getDescribe().getRelationshipName() ;
+                //jk - winter 15 patch
+                fnameLcase = fname.replace('ADD.', '').toLowerCase();
+                relship = addrFieldMap.get(fnameLcase).getDescribe().getRelationshipName() ;
             }
             else {
-                relship = acctFieldMap.get(fname).getDescribe().getRelationshipName() ;
+                //jk - winter 15 patch
+                fnameLcase = fname.toLowerCase();
+                relship = acctFieldMap.get(fnameLcase).getDescribe().getRelationshipName() ;
             }
             // Display Name field of lookup value
             SObject so2 = so.getSObject(relship);
