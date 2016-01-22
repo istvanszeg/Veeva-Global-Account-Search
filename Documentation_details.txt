@@ -1,4 +1,4 @@
 GAS Tech home page:
-https://sites.google.com/a/veeva.com/technical-services/global-account-search
+https://sites.google.com/a/veeva.com/technical-services/tools/global-account-search
 Release notes:
-https://sites.google.com/a/veeva.com/technical-services/global-account-search/release-notes
+https://sites.google.com/a/veeva.com/technical-services/tools/global-account-search/release-notes
