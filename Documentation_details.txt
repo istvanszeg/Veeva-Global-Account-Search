@@ -1,3 +1,5 @@
+GAS Drive Link with a lot of documentation:
+https://drive.google.com/a/veeva.com/folderview?id=0B9_Vpf5hQ7kBQjA0ekNOUG0wQm8&usp=sharing
 GAS Tech home page:
 https://sites.google.com/a/veeva.com/technical-services/tools/global-account-search
 Release notes:
